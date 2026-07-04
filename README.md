@@ -57,6 +57,12 @@ make run  # Boots the OS in QEMU
 - [ ] Process management
 - [ ] Memory management (paging)
 
+## Quick Start
+
+```bash
+qemu-system-x86_64 -cdrom minimal-os.iso -m 512M -serial stdio
+```
+
 ## References
 
 - https://wiki.osdev.org/
