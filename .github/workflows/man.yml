@@ -1,0 +1,60 @@
+name: Build and Release ISO
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          nasm \
+          grub-pc-bin \
+          xorriso \
+          mtools \
+          gcc-multilib
+    
+    - name: Build kernel
+      run: |
+        mkdir -p boot/grub
+        make clean
+        make all
+        ls -lh minimal-os.iso
+    
+    - name: Get current date
+      id: date
+      run: echo "DATE=$(date +'%Y-%m-%d_%H-%M-%S')" >> $GITHUB_OUTPUT
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: iso-${{ steps.date.outputs.DATE }}
+        name: "Prebuilt ISO - ${{ steps.date.outputs.DATE }}"
+        body: |
+          # Minimal OS - Prebuilt ISO
+          Automatically built image with all features included.
+        files: ./minimal-os.iso
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Upload ISO as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: minimal-os-iso
+        path: minimal-os.iso
+        retention-days: 30
