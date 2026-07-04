@@ -1,0 +1,24 @@
+# Build artifacts
+*.o
+*.bin
+*.iso
+kernel.bin
+
+# Build directory
+build/
+dist/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# QEMU state
+*.qcow2
+*.img
