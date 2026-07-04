@@ -1,0 +1,74 @@
+name: Build Prebuilt ISO
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential nasm grub-pc-bin xorriso mtools
+    
+    - name: Build OS
+      run: |
+        make clean
+        make
+        ls -lh minimal-os.iso
+    
+    - name: Create Release
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: actions/create-release@v1
+      id: create_release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: release-${{ github.run_number }}
+        release_name: "Prebuilt ISO #${{ github.run_number }}"
+        body: |
+          Prebuilt minimal-os ISO image
+          
+          ## Features
+          - GRUB bootloader
+          - x86-64 kernel
+          - Custom window manager with overlapping windows
+          - VGA console + framebuffer graphics
+          - Mouse/keyboard input support
+          
+          ## Quick Start
+          ```bash
+          qemu-system-x86_64 -cdrom minimal-os.iso -m 512M -serial stdio
+          ```
+          
+          See [PREBUILT.md](https://github.com/tuncayemredursun08-pixel/minimal-os/blob/main/PREBUILT.md) for more details.
+        draft: false
+        prerelease: false
+    
+    - name: Upload Release Asset
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./minimal-os.iso
+        asset_name: minimal-os.iso
+        asset_content_type: application/x-iso9660-image
+    
+    - name: Upload ISO as Artifact (PR)
+      if: github.event_name == 'pull_request'
+      uses: actions/upload-artifact@v3
+      with:
+        name: minimal-os-iso
+        path: minimal-os.iso
+        retention-days: 5
+        
