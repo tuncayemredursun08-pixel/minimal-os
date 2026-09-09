@@ -1,70 +1,76 @@
-# Minimal Unix-based OS with Custom Window Manager
+# Minimal OS
 
-A minimal operating system built from scratch with:
-- Custom x86-64 bootloader (GRUB-based)
-- Minimal kernel with interrupt handling
-- Custom overlapping window manager
-- Basic graphics support (VGA text mode + framebuffer)
+A from-scratch x86-64 hobby operating system written in C and Assembly.
 
-## Architecture
+## Boot stack
 
-- **Bootloader**: GRUB 2 (legacy multiboot)
-- **Kernel**: Custom minimal kernel in C and Assembly
-- **Display**: VGA text mode initially, framebuffer graphics for window manager
-- **Window Manager**: Custom overlapping window manager with mouse/keyboard input
+- **Bootloader:** Limine v12.x
+- **Kernel:** custom x86-64 kernel
+- **Display:** VGA text mode first, with framebuffer support in the existing window-manager code
+- **Architecture:** x86-64
+- **Testing:** QEMU
 
-## Requirements
+The project previously used GRUB. It now boots through Limine's Multiboot1 protocol. Limine's documentation supports `multiboot1` entries with a kernel path and documents BIOS/UEFI hybrid ISO creation. fileciteturn20file1 fileciteturn17file0
 
-- `gcc` (cross-compiler for x86-64 preferred)
-- `nasm` (Netwide Assembler)
-- `ld` (GNU Linker)
-- `qemu-system-x86_64` (for testing)
-- `grub-mkrescue` (for creating bootable ISO)
-- `xorriso` (ISO creation tool)
+## Repository layout
 
-## Building
-
-```bash
-make clean
-make
+```text
+boot/
+  limine.conf       Limine boot configuration
+kernel/
+  boot.asm          x86 bootstrap + long-mode setup
+  kernel.c          kernel entry point
+  vga.*             VGA text driver
+  interrupts.*      interrupt handling
+  gdt.asm           GDT setup
+wm/                 experimental window manager
+libc/               tiny freestanding C helpers
+linker.ld           kernel linker script
+Makefile            kernel + Limine ISO build
+.github/workflows/  reproducible CI build
 ```
 
-## Running
+## Build on Linux
+
+Install `gcc`, `binutils`, `nasm`, `xorriso`, and QEMU, then build Limine:
 
 ```bash
-make run  # Boots the OS in QEMU
+git clone --depth 1 --branch v12.x https://github.com/Limine-Bootloader/Limine.git limine
+cd limine
+./bootstrap
+./configure
+make -j2
+cd ..
+make LIMINE_DIR=limine
 ```
 
-## Project Structure
-
-- `boot/` — Bootloader and GRUB configuration
-- `kernel/` — Core kernel code (entry point, interrupts, VGA driver)
-- `wm/` — Window manager implementation
-- `libc/` — Minimal C library functions
-- `linker.ld` — Linker script for kernel layout
-
-## Features
-
-- [x] GRUB bootloader
-- [x] Kernel entry point
-- [x] Interrupt handling (IDT)
-- [x] VGA text mode driver
-- [x] Basic graphics framebuffer
-- [x] Window manager foundation
-- [x] Overlapping windows with depth
-- [x] Mouse and keyboard input handling
-- [ ] Filesystem support
-- [ ] Process management
-- [ ] Memory management (paging)
-
-## Quick Start
+Run it:
 
 ```bash
-qemu-system-x86_64 -cdrom minimal-os.iso -m 512M -serial stdio
+make run LIMINE_DIR=limine
 ```
 
-## References
+The resulting `minimal-os.iso` is a Limine BIOS/UEFI hybrid image. fileciteturn17file0
 
-- https://wiki.osdev.org/
-- https://www.gnu.org/software/grub/manual/
-- Bare Metal x86-64 development
+## GitHub Actions
+
+Every push and pull request builds Limine, compiles the kernel, creates the ISO, performs a short QEMU smoke test, and uploads `minimal-os.iso` as the `minimal-os-iso` artifact.
+
+## Current features
+
+- [x] Limine boot configuration
+- [x] x86-64 kernel entry
+- [x] VGA text output
+- [x] Interrupt/GDT foundations
+- [x] Existing window-manager foundation
+- [ ] Physical memory manager
+- [ ] Paging/virtual memory manager
+- [ ] Keyboard driver
+- [ ] Filesystem
+- [ ] Process/thread scheduler
+- [ ] User mode
+- [ ] Shell
+
+## Next milestone
+
+The next goal is a **real text-only VGA desktop/shell**: keyboard input, command parsing, scrolling, basic filesystem commands, and a small kernel allocator. Graphics can be added later without replacing the text console.
