@@ -1,0 +1,35 @@
+name: Build Minimal OS
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: sudo apt-get update && sudo apt-get install -y gcc binutils nasm xorriso qemu-system-x86
+
+      - name: Build Limine
+        run: |
+          git clone --depth 1 --branch v12.x https://github.com/Limine-Bootloader/Limine.git limine
+          cd limine
+          ./bootstrap
+          ./configure
+          make -j2
+
+      - name: Build ISO
+        run: make LIMINE_DIR=limine
+
+      - name: Smoke test with QEMU
+        run: timeout 8s make run LIMINE_DIR=limine || test $? -eq 124
+
+      - name: Upload ISO
+        uses: actions/upload-artifact@v4
+        with:
+          name: minimal-os-iso
+          path: minimal-os.iso
